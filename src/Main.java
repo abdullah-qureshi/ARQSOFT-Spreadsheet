@@ -59,7 +59,9 @@ public class Main {
 
         Content cellContent;
         if (content.startsWith("=")) {
-            cellContent = new FormulaContent(content);
+            // TODO: Parse the formula here
+            // cellContent = new FormulaContent(content);
+            cellContent = new TextContent(content);
         } else if (isNumeric(content)) {
             cellContent = new NumericContent(Double.parseDouble(content));
         } else {

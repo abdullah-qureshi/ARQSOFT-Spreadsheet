@@ -42,10 +42,12 @@ public class SpreadsheetFileManager {
     }
 
 
-    // Parse content based on the first character
     private static Content parseContent(String contentString) {
         if (contentString.startsWith("=")) {
-            return new FormulaContent(contentString); // Formula content
+            // Parse the formula string into a FormulaNode
+            // FormulaNode rootNode = FormulaParser.parse(contentString.substring(1));
+            // return new FormulaContent(rootNode);
+            return new TextContent(contentString);
         } else {
             try {
                 return new NumericContent(Double.parseDouble(contentString)); // Numeric content
@@ -54,6 +56,7 @@ public class SpreadsheetFileManager {
             }
         }
     }
+
 
     // Convert row and column indices to a cell coordinate (e.g., A1, B2)
     private static String getCoordinate(int row, int col) {

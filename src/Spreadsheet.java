@@ -30,37 +30,51 @@ public class Spreadsheet {
         int maxRows = cells.size();
         int maxCols = getMaxCols();
 
-        // Print column headers (A, B, ..., Z, AA, AB...)
-        System.out.print("   "); // Initial space for row numbers
+        System.out.print("   ");
         for (int col = 0; col < maxCols; col++) {
-            System.out.printf("%-10s", getColumnName(col)); // Column headers spaced evenly
+            System.out.printf("%-10s", getColumnName(col));
         }
         System.out.println();
 
-        // Print each row with row number and cell contents
         for (int row = 0; row < maxRows; row++) {
-            System.out.printf("%-3d", row + 1); // Row header (row number)
+            System.out.printf("%-3d", row + 1);
 
-            // Print each cell in the row
             List<Cell> rowCells = cells.get(row);
             for (int col = 0; col < maxCols; col++) {
                 if (col < rowCells.size()) {
-                    String content = rowCells.get(col).getContentString();
-                    System.out.printf("%-10s", content); // Cell content spaced evenly
+                    Cell cell = rowCells.get(col);
+                    String displayValue = getCellDisplayValue(cell);
+                    System.out.printf("%-10s", displayValue);
                 } else {
-                    System.out.printf("%-10s", ""); // Empty cell space
+                    System.out.printf("%-10s", "");
                 }
             }
             System.out.println();
         }
     }
 
-    // New method to return the 2D list of cells
+    // Helper method to get the display value of a cell
+    private String getCellDisplayValue(Cell cell) {
+        Content content = cell.getContent();
+        if (content instanceof NumericContent) {
+            return cell.getContentString(); // Display the numeric value
+        } else if (content instanceof FormulaContent) {
+            try {
+                double value = ((FormulaContent) content).evaluateFormula(this); // Evaluate the formula
+                return Double.toString(value);
+            } catch (Exception e) {
+                return "#ERROR"; // if evaluation fails
+            }
+        } else if (content != null) {
+            return content.toString();
+        }
+        return "";
+    }
+
     public List<List<Cell>> getCells() {
         return cells;
     }
 
-    // New helper method to convert column index to Excel-style column name
     private String getColumnName(int colIndex) {
         StringBuilder columnName = new StringBuilder();
         while (colIndex >= 0) {
@@ -70,7 +84,6 @@ public class Spreadsheet {
         return columnName.toString();
     }
 
-    // Helper method to get the maximum number of columns in any row
     private int getMaxCols() {
         int maxCols = 0;
         for (List<Cell> row : cells) {
@@ -96,12 +109,10 @@ public class Spreadsheet {
         }
     }
 
-    // Convert row/column indices to a cell coordinate (e.g., A1, B2, AA10)
     private String getCoordinate(int row, int col) {
         return getColumnName(col) + Integer.toString(row + 1);
     }
 
-    // Convert a cell coordinate like "A1" to row and column indices
     private int[] parseCoordinate(String coordinate) {
         if (coordinate == null || coordinate.length() < 2) return null;
 
@@ -126,12 +137,27 @@ public class Spreadsheet {
         return null;
     }
 
-    // New helper method to convert Excel-style column name to a 0-based index
     private int parseColumnName(String columnName) {
         int colIndex = 0;
         for (int i = 0; i < columnName.length(); i++) {
             colIndex = colIndex * 26 + (columnName.charAt(i) - 'A' + 1);
         }
-        return colIndex - 1; // Adjust for 0-based index
+        return colIndex - 1;
+    }
+
+    public double evaluateCell(String coordinate) {
+        Cell cell = getCell(coordinate);
+        if (cell == null) {
+            throw new IllegalArgumentException("Cell does not exist: " + coordinate);
+        }
+
+        Content content = cell.getContent();
+        if (content instanceof NumericContent) {
+            return Double.parseDouble(cell.getContentString());
+        } else if (content instanceof FormulaContent) {
+            return ((FormulaContent) content).evaluateFormula(this);
+        }
+
+        throw new IllegalArgumentException("Cell does not contain a numeric or formula value: " + coordinate);
     }
 }
