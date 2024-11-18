@@ -1,4 +1,3 @@
-// TextContent.java
 class TextContent extends Content {
     private String text;
 

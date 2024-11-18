@@ -9,7 +9,7 @@ public class Main {
         Scanner scanner = new Scanner(System.in);
         String command;
 
-        System.out.println("Welcome to the Spreadsheet");
+        System.out.println("Spreadsheet");
         while (true) {
             displayMenu();
             command = scanner.nextLine();

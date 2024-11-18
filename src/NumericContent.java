@@ -1,4 +1,3 @@
-// NumericContent.java
 class NumericContent extends Content {
     private double number;
 
