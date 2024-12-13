@@ -87,7 +87,7 @@ class FormulaParserTest {
         spreadsheet.setCellContent("A2", new NumericContent(20.0));
         spreadsheet.setCellContent("A3", new NumericContent(30.0));
 
-        String input = "=SUMA(A1;A3)";
+Add        String input = "=SUMA(A1:A3)";
         FormulaNode node = FormulaParser.parse(input);
         assertNotNull(node, "Parser should return a valid node");
 

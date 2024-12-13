@@ -13,6 +13,7 @@ class CellNode extends FormulaNode {
     public double evaluate(Spreadsheet spreadsheet) {
         Cell cell = spreadsheet.getCell(coordinate);
         if (cell == null) {
+//            return 0;
             throw new IllegalArgumentException("Referenced cell does not exist: " + coordinate);
         }
 

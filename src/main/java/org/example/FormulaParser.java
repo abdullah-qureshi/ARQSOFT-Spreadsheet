@@ -141,8 +141,8 @@ public class FormulaParser {
 
     private static Token createToken(String value) {
         // Determine token type
-        if (value.matches("^[A-Za-z][0-9]+$")) {
-            // Cell reference
+        if (value.matches("^[A-Za-z][0-9]+:[A-Za-z][0-9]+$") || value.matches("^[A-Za-z][0-9]+$")) {
+            // Cell reference (both single cell and range)
             return new Token(TokenType.CELL_REFERENCE, value);
         }
         
@@ -230,10 +230,10 @@ public class FormulaParser {
                 
                 case CELL_REFERENCE:
                     if (token.value.contains(":")) {
-                        // Handle range reference
-                        List<FormulaNode> rangeNodes = parseRange(token.value);
-                        // For ranges, we'll push all nodes to the stack
-                        rangeNodes.forEach(nodeStack::push);
+                        // This is a range, expand it into individual cells
+                        List<FormulaNode> cellNodes = parseRange(token.value);
+                        // For functions like SUMA, we can add all cells to the stack
+                        cellNodes.forEach(nodeStack::push);
                     } else {
                         // Single cell reference
                         nodeStack.push(new CellNode(token.value));
@@ -305,7 +305,6 @@ public class FormulaParser {
     private static List<FormulaNode> parseRange(String range) {
         List<FormulaNode> cellNodes = new ArrayList<>();
 
-        // Parse the range format
         String[] parts = range.split(":");
         if (parts.length == 1) {
             // Single cell reference (e.g., "A1")
