@@ -64,7 +64,7 @@ graph LR
     CLI[Command Line Interface] --> Spreadsheet
     Spreadsheet --> Cell
     Cell --> Parser
-    Parser <--> Formula Tree
+    Parser <--> FormulaTree
 ```
 
 ---
