@@ -23,8 +23,7 @@ public class FormulaParser {
             this.value = value;
         }
     }
-
-    // Operator precedence and associativity
+    // Set operator precedence here
     private static final Map<String, Integer> OPERATOR_PRECEDENCE = Map.of(
         "+", 1,
         "-", 1,
@@ -42,12 +41,9 @@ public class FormulaParser {
             System.out.println("Error: Formula cannot be null or empty");
             return null;
         }
-
-        // Remove leading '=' if present
         if (formula.startsWith("=")) {
             formula = formula.substring(1);
         }
-
         // Tokenize the input with error handling
         List<Token> tokens;
         try {
@@ -62,14 +58,13 @@ public class FormulaParser {
         }
 
         try {
-            // Convert to Reverse Polish Notation (RPN)
+            // Convert to Reverse Polish Notation
             List<Token> rpn = convertToRPN(tokens);
             if (rpn.isEmpty()) {
                 System.out.println("Error: Could not convert to RPN");
                 return null;
             }
-
-            // Build the node tree from RPN
+            // Build the node tree
             FormulaNode node = buildNodeTree(rpn);
             if (node == null) {
                 System.out.println("Error: Could not build syntax tree");
@@ -91,7 +86,6 @@ public class FormulaParser {
             char c = formula.charAt(i);
             
             if (Character.isWhitespace(c)) {
-                // Skip whitespace
                 if (currentToken.length() > 0) {
                     tokens.add(createToken(currentToken.toString()));
                     currentToken.setLength(0);
@@ -99,21 +93,23 @@ public class FormulaParser {
                 continue;
             }
             
-            // Check for operators and parentheses
-            if ("+-*/()".indexOf(c) != -1) {
-                // Add previous token if exists
+            // Check if character is an operator (+,-,*,/) or parenthesis
+            if (isOperatorOrParenthesis(c)) {
                 if (currentToken.length() > 0) {
                     tokens.add(createToken(currentToken.toString()));
                     currentToken.setLength(0);
                 }
                 
-                // Add operator or parenthesis
-                tokens.add(new Token(
-                    c == '(' ? TokenType.LEFT_PAREN :
-                    c == ')' ? TokenType.RIGHT_PAREN :
-                    TokenType.OPERATOR, 
-                    String.valueOf(c)
-                ));
+                TokenType type;
+                if (c == '(') {
+                    type = TokenType.LEFT_PAREN;
+                } else if (c == ')') {
+                    type = TokenType.RIGHT_PAREN; 
+                } else {
+                    type = TokenType.OPERATOR;
+                }
+                
+                tokens.add(new Token(type, String.valueOf(c)));
                 continue;
             }
             
@@ -140,72 +136,75 @@ public class FormulaParser {
     }
 
     private static Token createToken(String value) {
-        // Determine token type
-        if (value.matches("^[A-Za-z][0-9]+:[A-Za-z][0-9]+$") || value.matches("^[A-Za-z][0-9]+$")) {
-            // Cell reference (both single cell and range)
+        // Check if it's a cell reference like "A1" or range like "A1:B2"
+        boolean isCellRef = value.matches("[A-Z][0-9]+") || 
+                           value.matches("[A-Z][0-9]+:[A-Z][0-9]+");
+        if (isCellRef) {
             return new Token(TokenType.CELL_REFERENCE, value);
         }
         
-        if (value.matches("^-?\\d+(\\.\\d+)?$")) {
-            // Numeric value
+        // Check if it's a number (positive, negative or decimal)
+        try {
+            Double.parseDouble(value);
             return new Token(TokenType.NUMBER, value);
+        } catch (NumberFormatException e) {
+            // Not a number, continue checking
         }
         
-        if (SUPPORTED_FUNCTIONS.contains(value.toUpperCase())) {
-            // Function
-            return new Token(TokenType.FUNCTION, value.toUpperCase());
+        // Check if it's a supported function name
+        String upperValue = value.toUpperCase();
+        if (SUPPORTED_FUNCTIONS.contains(upperValue)) {
+            return new Token(TokenType.FUNCTION, upperValue);
         }
         
+        // If we get here, the token is invalid
         throw new IllegalArgumentException("Invalid token: " + value);
     }
 
     private static List<Token> convertToRPN(List<Token> tokens) {
         List<Token> output = new ArrayList<>();
-        Deque<Token> operatorStack = new ArrayDeque<>();
+        List<Token> operatorStack = new ArrayList<>();
         
         for (Token token : tokens) {
-            switch (token.type) {
-                case NUMBER, CELL_REFERENCE:
-                    output.add(token);
-                    break;
+            if (token.type == TokenType.NUMBER || token.type == TokenType.CELL_REFERENCE) {
+                output.add(token);
+                continue;
+            }
+            
+            if (token.type == TokenType.FUNCTION || token.type == TokenType.LEFT_PAREN) {
+                operatorStack.add(token);
+                continue;
+            }
+            
+            if (token.type == TokenType.RIGHT_PAREN) {
+                while (!operatorStack.isEmpty() && 
+                       getLast(operatorStack).type != TokenType.LEFT_PAREN) {
+                    output.add(removeLast(operatorStack));
+                }
                 
-                case FUNCTION:
-                    operatorStack.push(token);
-                    break;
+                if (!operatorStack.isEmpty()) {
+                    removeLast(operatorStack);
+                }
                 
-                case LEFT_PAREN:
-                    operatorStack.push(token);
-                    break;
-                
-                case RIGHT_PAREN:
-                    while (!operatorStack.isEmpty() && operatorStack.peek().type != TokenType.LEFT_PAREN) {
-                        output.add(operatorStack.pop());
-                    }
-                    if (!operatorStack.isEmpty() && operatorStack.peek().type == TokenType.LEFT_PAREN) {
-                        operatorStack.pop(); // Remove left parenthesis
-                    }
-                    if (!operatorStack.isEmpty() && operatorStack.peek().type == TokenType.FUNCTION) {
-                        output.add(operatorStack.pop()); // Add function to output
-                    }
-                    break;
-                
-                case OPERATOR:
-                    while (!operatorStack.isEmpty() && 
-                           operatorStack.peek().type == TokenType.OPERATOR && 
-                           getPrecedence(operatorStack.peek()) >= getPrecedence(token)) {
-                        output.add(operatorStack.pop());
-                    }
-                    operatorStack.push(token);
-                    break;
-                
-                case ARGUMENT_SEPARATOR:
-                    // Skip argument separators in RPN notation
-                    break;
+                if (!operatorStack.isEmpty() && getLast(operatorStack).type == TokenType.FUNCTION) {
+                    output.add(removeLast(operatorStack));
+                }
+                continue;
+            }
+            
+            // Handle operators
+            if (token.type == TokenType.OPERATOR) {
+                while (!operatorStack.isEmpty() && 
+                       getLast(operatorStack).type == TokenType.OPERATOR &&
+                       getPrecedence(getLast(operatorStack)) >= getPrecedence(token)) {
+                    output.add(removeLast(operatorStack));
+                }
+                operatorStack.add(token);
             }
         }
         
         while (!operatorStack.isEmpty()) {
-            Token token = operatorStack.pop();
+            Token token = removeLast(operatorStack);
             if (token.type == TokenType.LEFT_PAREN || token.type == TokenType.RIGHT_PAREN) {
                 throw new IllegalArgumentException("Mismatched parentheses");
             }
@@ -213,6 +212,15 @@ public class FormulaParser {
         }
         
         return output;
+    }
+    
+    // Helper methods to treat ArrayList like a stack
+    private static Token getLast(List<Token> list) {
+        return list.get(list.size() - 1);
+    }
+    
+    private static Token removeLast(List<Token> list) {
+        return list.remove(list.size() - 1);
     }
 
     private static int getPrecedence(Token token) {
@@ -289,13 +297,17 @@ public class FormulaParser {
         return nodeStack.pop();
     }
 
+    private static boolean isOperatorOrParenthesis(char c) {
+        return c == '+' || c == '-' || c == '*' || c == '/' || c == '(' || c == ')';
+    }
+
     private static int determineFunctionArgCount(String functionName) {
         switch (functionName.toUpperCase()) {
-            case "SUMA":   // SUM (Range or multiple numbers)
-            case "MIN":    // MIN (Range or multiple numbers)
-            case "MAX":    // MAX (Range or multiple numbers)
-            case "PROMEDIO": // AVERAGE (Range or multiple numbers)
-                return -1;  // -1 signifies variable argument count
+            case "SUMA":   
+            case "MIN":   
+            case "MAX":    
+            case "PROMEDIO": 
+                return -1; 
             default:
                 throw new IllegalArgumentException("Unknown function: " + functionName);
         }
@@ -307,7 +319,6 @@ public class FormulaParser {
 
         String[] parts = range.split(":");
         if (parts.length == 1) {
-            // Single cell reference (e.g., "A1")
             cellNodes.add(new CellNode(parts[0]));
         } else if (parts.length == 2) {
             String startCell = parts[0];
