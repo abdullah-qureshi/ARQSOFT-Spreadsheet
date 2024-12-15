@@ -27,11 +27,12 @@ A simple command-line spreadsheet application developed as part of the Software 
 
 ### Core Components
 
-#### 1. 📑 Spreadsheet
+#### 1. Spreadsheet
 ```
 Main class that handles:
 ├── Cell management
 ├── Operation coordination
+├── Save/Load operations
 └── Evaluation for input commands
 ```
 
@@ -60,10 +61,10 @@ A Shunting Yard algorithm that provides:
 ### System Flow
 ```mermaid
 graph LR
-    CLI[Command Line Interface] --> Parser
-    Parser --> Spreadsheet
+    CLI[Command Line Interface] --> Spreadsheet
     Spreadsheet --> Cell
-    Cell <--> Formula
+    Cell --> Parser
+    Parser <--> Formula Tree
 ```
 
 ---
