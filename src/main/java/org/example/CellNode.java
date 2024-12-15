@@ -13,7 +13,6 @@ class CellNode extends FormulaNode {
     public double evaluate(Spreadsheet spreadsheet) {
         Cell cell = spreadsheet.getCell(coordinate);
         if (cell == null) {
-//            return 0;
             throw new IllegalArgumentException("Referenced cell does not exist: " + coordinate);
         }
 
@@ -21,11 +20,25 @@ class CellNode extends FormulaNode {
         if (content instanceof NumericContent) {
             return Double.parseDouble(cell.getContentString());
         } else if (content instanceof FormulaContent formulaContent) {
-            return Double.parseDouble(formulaContent.getLastValue());
+            // First check for circular reference
+            if (formulaContent.getLastValue().equals("#CIRCULAR")) {
+                throw new IllegalArgumentException("#ERROR_CIRCULAR_REFERENCE");
+            }
+            
+            try {
+                return spreadsheet.evaluateCell(coordinate);
+            } catch (IllegalArgumentException e) {
+                if (e.getMessage().contains("#ERROR_CIRCULAR_REFERENCE")) {
+                    throw new IllegalArgumentException("#ERROR_CIRCULAR_REFERENCE");
+                }
+                throw e;
+            }
+        } else if (content instanceof TextContent && 
+                content.toString().equals("#ERROR_CIRCULAR_REFERENCE")) {
+            throw new IllegalArgumentException("#ERROR_CIRCULAR_REFERENCE");
         }
-        return 0;
 
-//        throw new IllegalArgumentException("Referenced cell does not contain a numeric or formula value: " + coordinate);
+        throw new IllegalArgumentException("#ERROR_CIRCULAR_REFERENCE");
     }
 
     public String getCoordinate() {
@@ -35,5 +48,11 @@ class CellNode extends FormulaNode {
     @Override
     public String toString() {
         return coordinate; // Displays the coordinate of the cell, e.g., "A1"
+    }
+
+    @Override
+    public boolean containsReference(String coordinate) {
+        // Check if this cell directly references the target coordinate
+        return coordinate.equals(this.coordinate) || super.containsReference(coordinate);
     }
 }

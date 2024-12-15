@@ -87,11 +87,61 @@ class FormulaParserTest {
         spreadsheet.setCellContent("A2", new NumericContent(20.0));
         spreadsheet.setCellContent("A3", new NumericContent(30.0));
 
-Add        String input = "=SUMA(A1:A3)";
+        String input = "=SUMA(A1:A3)";
         FormulaNode node = FormulaParser.parse(input);
         assertNotNull(node, "Parser should return a valid node");
 
         double result = node.evaluate(spreadsheet);
         assertEquals(60.0, result, "SUMA should return 10+20+30=60");
+    }
+
+    @Test
+    void testCircularDependency() {
+        Spreadsheet spreadsheet = new Spreadsheet();
+        
+        // Create a circular dependency: A1 -> B1 -> A1
+        FormulaNode formulaA1 = FormulaParser.parse("=B1+5");
+        FormulaNode formulaB1 = FormulaParser.parse("=A1+10");
+        
+        spreadsheet.setCellContent("A1", new FormulaContent(formulaA1));
+        spreadsheet.setCellContent("B1", new FormulaContent(formulaB1));
+        
+        assertThrows(IllegalArgumentException.class, 
+            () -> spreadsheet.evaluateCell("A1"),
+            "Should detect circular reference"
+        );
+    }
+
+    @Test
+    void testIndirectCircularDependency() {
+        Spreadsheet spreadsheet = new Spreadsheet();
+        
+        // Create a circular dependency: A1 -> B1 -> C1 -> A1
+        FormulaNode formulaA1 = FormulaParser.parse("=B1");
+        FormulaNode formulaB1 = FormulaParser.parse("=C1");
+        FormulaNode formulaC1 = FormulaParser.parse("=A1");
+        
+        spreadsheet.setCellContent("A1", new FormulaContent(formulaA1));
+        spreadsheet.setCellContent("B1", new FormulaContent(formulaB1));
+        spreadsheet.setCellContent("C1", new FormulaContent(formulaC1));
+        
+        assertThrows(IllegalArgumentException.class, 
+            () -> spreadsheet.evaluateCell("A1"),
+            "Should detect indirect circular reference"
+        );
+    }
+
+    @Test
+    void testSelfCircularDependency() {
+        Spreadsheet spreadsheet = new Spreadsheet();
+        
+        // Create a self-referential dependency: A1 -> A1
+        FormulaNode formulaA1 = FormulaParser.parse("=A1");
+        spreadsheet.setCellContent("A1", new FormulaContent(formulaA1));
+        
+        assertThrows(IllegalArgumentException.class, 
+            () -> spreadsheet.evaluateCell("A1"),
+            "Should detect self circular reference"
+        );
     }
 }

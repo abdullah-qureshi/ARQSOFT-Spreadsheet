@@ -22,34 +22,6 @@ public class Spreadsheet {
     public List<List<Cell>> getCells() {
         return cells;
     }
-
-    public void setCellContent(String coordinate, Content content) {
-        Cell cell = getCell(coordinate);
-        if (cell == null) {
-            throw new IllegalArgumentException("Invalid cell coordinate.");
-        }
-
-        clearDependencies(cell);
-
-        if (content instanceof FormulaContent formulaContent) {
-            List<String> dependencies = extractDependencies(formulaContent);
-            for (String dependentCoordinate : dependencies) {
-                Cell dependentCell = getCell(dependentCoordinate);
-                if (dependentCell != null) {
-                    dependentCell.addDependent(cell);
-                }
-            }
-        }
-
-        cell.setContent(content);
-
-        // Reevaluate this cell and notify dependents
-        if (content instanceof FormulaContent formulaContent) {
-            formulaContent.evaluateFormula(this);
-        }
-        cell.updateDependents(this);
-    }
-
     public void displaySpreadsheet() {
         int maxRows = cells.size();
         int maxCols = getMaxCols();
@@ -76,6 +48,43 @@ public class Spreadsheet {
             System.out.println();
         }
     }
+public void setCellContent(String coordinate, Content content) {
+    Cell cell = getCell(coordinate);
+    if (cell == null) {
+        throw new IllegalArgumentException("Invalid cell coordinate.");
+    }
+
+    clearDependencies(cell);
+
+    // Set up new dependencies for formula
+    if (content instanceof FormulaContent formulaContent) {
+        List<String> dependencies = extractDependencies(formulaContent);
+        for (String dependentCoordinate : dependencies) {
+            Cell dependentCell = getCell(dependentCoordinate);
+            if (dependentCell != null) {
+                dependentCell.addDependent(cell);
+            }
+        }
+    }
+
+    cell.setContent(content);
+
+    // Evaluate formula but keep the formula content
+    if (content instanceof FormulaContent formulaContent) {
+        try {
+            formulaContent.evaluateFormula(this, coordinate);
+        } catch (IllegalArgumentException e) {
+            if (e.getMessage().contains("#ERROR_CIRCULAR_REFERENCE")) {
+                cell.setContent(new TextContent("#ERROR_CIRCULAR_REFERENCE"));
+            } else {
+                cell.setContent(new TextContent(e.getMessage()));
+            }
+        }
+    }
+    
+    // Update dependents
+    cell.updateDependents(this, coordinate);
+}
 
     private String getCellDisplayValue(Cell cell) {
         Content content = cell.getContent();
@@ -127,7 +136,13 @@ public class Spreadsheet {
         if (content instanceof NumericContent) {
             return Double.parseDouble(cell.getContentString());
         } else if (content instanceof FormulaContent) {
-            return ((FormulaContent) content).evaluateFormula(this);
+            try{
+                System.out.println("Evaluating formula at " + coordinate);
+                return ((FormulaContent) content).evaluateFormula(this, coordinate);
+            } catch (IllegalArgumentException e) {
+                System.out.println("Error evaluating formula at " + coordinate + ": " + e.getMessage());
+                cell.setContent(new TextContent(e.getMessage()));
+            }
         }
 
         throw new IllegalArgumentException("Cell does not contain a numeric or formula value: " + coordinate);

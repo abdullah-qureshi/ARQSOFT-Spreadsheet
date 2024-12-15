@@ -17,4 +17,14 @@ abstract class FormulaNode {
 
     @Override
     public abstract String toString();
+
+    public boolean containsReference(String coordinate) {
+        // Base implementation for most nodes - check children
+        for (FormulaNode child : children) {
+            if (child.containsReference(coordinate)) {
+                return true;
+            }
+        }
+        return false;
+    }
 }

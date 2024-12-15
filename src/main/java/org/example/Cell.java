@@ -6,7 +6,8 @@ import java.util.List;
 public class Cell {
     private String coordinate;
     private Content content;
-    private List<Cell> dependents; // Use a List to store dependents
+    private FormulaContent originalFormula;
+    private List<Cell> dependents;
 
     public Cell(String coordinate) {
         this.coordinate = coordinate;
@@ -23,6 +24,9 @@ public class Cell {
     }
 
     public void setContent(Content content) {
+        if (content instanceof FormulaContent) {
+            this.originalFormula = (FormulaContent) content;
+        }
         this.content = content;
     }
 
@@ -45,14 +49,22 @@ public class Cell {
         return dependents;
     }
 
-    public void updateDependents(Spreadsheet spreadsheet) {
+    public void updateDependents(Spreadsheet spreadsheet, String coordinate) {
         for (Cell dependent : dependents) {
             Content dependentContent = dependent.getContent();
-            if (dependentContent instanceof FormulaContent formulaContent) {
-                formulaContent.evaluateFormula(spreadsheet); // Reevaluate the formula
-                dependent.updateDependents(spreadsheet); // Recursively notify dependents
+            if (dependentContent instanceof FormulaContent) {
+                // Re-set the content to trigger a complete re-evaluation
+                Content originalContent = dependent.getContent();
+                dependent.setContent(originalContent);
+                
+                // Continue updating the chain of dependencies
+                dependent.updateDependents(spreadsheet, coordinate);
             }
         }
+    }
+
+    public FormulaContent getOriginalFormula() {
+        return originalFormula;
     }
 }
 
