@@ -61,8 +61,6 @@ public class Main {
 
         Content cellContent;
         if (content.startsWith("=")) {
-//            try {
-                // Parse the formula here
                 System.out.println("Parsing: " + content);
                 FormulaNode rootNode = FormulaParser.parse(content);
                 if (rootNode == null){
@@ -71,11 +69,6 @@ public class Main {
                 else{
                     cellContent = new FormulaContent(rootNode);
                 }
-
-//            } catch (Exception e) {
-//                System.out.println("Error parsing formula: " + e.getMessage());
-//                return;
-//            }
         } else if (isNumeric(content)) {
             cellContent = new NumericContent(Double.parseDouble(content));
         } else {

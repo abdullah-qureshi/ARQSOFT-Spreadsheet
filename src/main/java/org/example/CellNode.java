@@ -47,7 +47,7 @@ class CellNode extends FormulaNode {
 
     @Override
     public String toString() {
-        return coordinate; // Displays the coordinate of the cell, e.g., "A1"
+        return coordinate;
     }
 
     @Override

@@ -14,7 +14,7 @@ class MinNode extends FormulaNode {
             throw new IllegalStateException("MinNode requires at least one operand.");
         }
 
-        double min = Double.POSITIVE_INFINITY; // Start with the smallest possible value
+        double min = Double.POSITIVE_INFINITY;
         for (FormulaNode child : getChildren()) {
             double value = child.evaluate(spreadsheet);
             min = Math.min(min, value);

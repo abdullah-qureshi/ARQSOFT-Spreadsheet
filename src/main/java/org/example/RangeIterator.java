@@ -18,7 +18,7 @@ public class RangeIterator implements Iterator<String> {
         this.currentCol = this.startCol;
         this.currentRow = this.startRow;
         this.spreadsheet = spreadsheet;
-        findNextNonEmptyCell(); // Position at first non-empty cell
+        findNextNonEmptyCell(); 
     }
 
     private void findNextNonEmptyCell() {
