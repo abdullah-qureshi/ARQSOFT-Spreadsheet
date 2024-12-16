@@ -15,10 +15,8 @@ class SubtractionNode extends FormulaNode {
             throw new IllegalStateException("InversionNode requires at least one operand.");
         }
 
-        // Start with the value of the first child
         double result = children.get(0).evaluate(spreadsheet);
 
-        // Sequentially subtract the other children
         for (int i = 1; i < children.size(); i++) {
             result -= children.get(i).evaluate(spreadsheet);
         }

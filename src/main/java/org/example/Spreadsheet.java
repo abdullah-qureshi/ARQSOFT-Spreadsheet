@@ -48,43 +48,42 @@ public class Spreadsheet {
             System.out.println();
         }
     }
-public void setCellContent(String coordinate, Content content) {
-    Cell cell = getCell(coordinate);
-    if (cell == null) {
+
+    public void setCellContent(String coordinate, Content content) {
+        Cell cell = getCell(coordinate);
+        if (cell == null) {
         throw new IllegalArgumentException("Invalid cell coordinate.");
-    }
+        }
 
-    clearDependencies(cell);
+        clearDependencies(cell);
 
-    // Set up new dependencies for formula
-    if (content instanceof FormulaContent formulaContent) {
-        List<String> dependencies = extractDependencies(formulaContent);
-        for (String dependentCoordinate : dependencies) {
-            Cell dependentCell = getCell(dependentCoordinate);
-            if (dependentCell != null) {
-                dependentCell.addDependent(cell);
+        if (content instanceof FormulaContent formulaContent) {
+            List<String> dependencies = extractDependencies(formulaContent);
+            for (String dependentCoordinate : dependencies) {
+                Cell dependentCell = getCell(dependentCoordinate);
+                if (dependentCell != null) {
+                    dependentCell.addDependent(cell);
+                }
             }
         }
-    }
 
-    cell.setContent(content);
+        cell.setContent(content);
 
-    // Evaluate formula but keep the formula content
-    if (content instanceof FormulaContent formulaContent) {
-        try {
-            formulaContent.evaluateFormula(this, coordinate);
-        } catch (IllegalArgumentException e) {
-            if (e.getMessage().contains("#ERROR_CIRCULAR_REFERENCE")) {
-                cell.setContent(new TextContent("#ERROR_CIRCULAR_REFERENCE"));
-            } else {
-                cell.setContent(new TextContent(e.getMessage()));
+        // Evaluate formula but keep the formula content
+        if (content instanceof FormulaContent formulaContent) {
+            try {
+                formulaContent.evaluateFormula(this, coordinate);
+            } catch (IllegalArgumentException e) {
+                if (e.getMessage().contains("#ERROR_CIRCULAR_REFERENCE")) {
+                    cell.setContent(new TextContent("#ERROR_CIRCULAR_REFERENCE"));
+                } else {
+                    cell.setContent(new TextContent(e.getMessage()));
+                }
             }
         }
-    }
-    
-    // Update dependents
-    cell.updateDependents(this, coordinate);
-}
+        
+        cell.updateDependents(this, coordinate);
+    }   
 
     private String getCellDisplayValue(Cell cell) {
         Content content = cell.getContent();
@@ -115,11 +114,11 @@ public void setCellContent(String coordinate, Content content) {
     private void collectDependencies(FormulaNode node, List<String> dependencies) {
         if (node instanceof CellNode cellNode) {
             if (!dependencies.contains(cellNode.getCoordinate())) {
-                dependencies.add(cellNode.getCoordinate()); // Add unique dependencies
+                dependencies.add(cellNode.getCoordinate());
             }
         } else if (node instanceof ValueNode) {
             // No dependencies for value nodes
-        } else if (node.getChildren() != null) { // For variadic nodes
+        } else if (node.getChildren() != null) {
             for (FormulaNode child : node.getChildren()) {
                 collectDependencies(child, dependencies);
             }

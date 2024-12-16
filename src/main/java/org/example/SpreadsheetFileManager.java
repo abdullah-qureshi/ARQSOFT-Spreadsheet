@@ -54,7 +54,7 @@ public class SpreadsheetFileManager {
     private static Content parseContent(String contentString, Spreadsheet spreadsheet) {
         if (contentString.startsWith("=")) {
             // TODO: Parse the formula string into a FormulaNode
-            FormulaNode rootNode = FormulaParser.parse(contentString); // Remove '=' before parsing
+            FormulaNode rootNode = FormulaParser.parse(contentString); 
             if (rootNode == null){
                 return new TextContent("#ERROR");
             }
@@ -64,14 +64,14 @@ public class SpreadsheetFileManager {
             
         } else {
             try {
-                return new NumericContent(Double.parseDouble(contentString)); // Numeric content
+                return new NumericContent(Double.parseDouble(contentString));
             } catch (NumberFormatException e) {
-                return new TextContent(contentString); // Text content
+                return new TextContent(contentString); 
             }
         }
     }
 
-    // Convert row and column indices to a cell coordinate (e.g., A1, B2)
+    // Convert row and column indices to a cell coordinate (A1, B2)
     private static String getCoordinate(int row, int col) {
         StringBuilder columnName = new StringBuilder();
         while (col >= 0) {

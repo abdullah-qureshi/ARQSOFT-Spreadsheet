@@ -6,7 +6,7 @@ import java.util.List;
 public class Cell {
     private String coordinate;
     private Content content;
-    private FormulaContent originalFormula;
+    private FormulaContent Formula;
     private List<Cell> dependents;
 
     public Cell(String coordinate) {
@@ -25,7 +25,7 @@ public class Cell {
 
     public void setContent(Content content) {
         if (content instanceof FormulaContent) {
-            this.originalFormula = (FormulaContent) content;
+            this.Formula = (FormulaContent) content;
         }
         this.content = content;
     }
@@ -64,7 +64,7 @@ public class Cell {
     }
 
     public FormulaContent getOriginalFormula() {
-        return originalFormula;
+        return Formula;
     }
 }
 

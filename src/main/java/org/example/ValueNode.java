@@ -12,11 +12,11 @@ class ValueNode extends FormulaNode {
 
     @Override
     public double evaluate(Spreadsheet spreadsheet) {
-        return value; // Simply returns its constant value
+        return value;
     }
 
     @Override
     public String toString() {
-        return Double.toString(value); // Converts the value to a string for display
+        return Double.toString(value); 
     }
 }
